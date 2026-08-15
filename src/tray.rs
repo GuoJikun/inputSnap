@@ -88,7 +88,12 @@ fn create_hidden_window() -> Result<HWND, String> {
     }
 }
 
+// "IS" 两个字母的 5x7 点阵字模（1=填充，0=背景）
+const GLYPH_I: [u8; 7] = [0b11111, 0b00100, 0b00100, 0b00100, 0b00100, 0b00100, 0b11111];
+const GLYPH_S: [u8; 7] = [0b01110, 0b10001, 0b10000, 0b01110, 0b00001, 0b10001, 0b01110];
+
 unsafe fn create_colored_icon() -> windows::Win32::UI::WindowsAndMessaging::HICON {
+    // 原生 16x16 绘制，与托盘显示尺寸 1:1 对应，避免系统缩放导致模糊
     let (w, h) = (16i32, 16i32);
 
     let hdc_screen: HDC = GetDC(None);
@@ -122,15 +127,45 @@ unsafe fn create_colored_icon() -> windows::Win32::UI::WindowsAndMessaging::HICO
         }
     };
 
+    // 填充紫色背景 (RGB 138, 43, 226 -> 0x00E22A8A 为 0xBBGGRR 字节序)，四角半径 2 的圆角
     if !bits.is_null() {
-        let pixels = std::slice::from_raw_parts_mut(bits as *mut u8, (w * h * 4) as usize);
-        for y in 0..h as usize {
-            for x in 0..w as usize {
-                let idx = (y * w as usize + x) * 4;
-                pixels[idx] = (x * 16) as u8;
-                pixels[idx + 1] = 0;
-                pixels[idx + 2] = (y * 16) as u8;
-                pixels[idx + 3] = 255;
+        let pixels = std::slice::from_raw_parts_mut(bits as *mut u32, (w * h) as usize);
+        const RADIUS: i32 = 2;
+        const BG_COLOR: u32 = 0xFFE22A8A; // 0xAABBGGRR：Alpha=FF, B=E2, G=2A, R=8A => 紫色
+
+        for y in 0..h {
+            for x in 0..w {
+                // 判断像素是否落在圆角圆弧外（四个角各 2x2 区域）
+                let cx = x.min(w - 1 - x);
+                let cy = y.min(h - 1 - y);
+                let inside = if cx < RADIUS && cy < RADIUS {
+                    // 角部：到圆心 (RADIUS, RADIUS) 的距离需在圆弧内
+                    let dx = cx - RADIUS;
+                    let dy = cy - RADIUS;
+                    dx * dx + dy * dy <= RADIUS * RADIUS
+                } else {
+                    true
+                };
+                pixels[(y * w + x) as usize] = if inside { BG_COLOR } else { 0x00000000 };
+            }
+        }
+
+        // 两个字母水平并列（5x7 点阵原尺寸），间距 1px，总宽 11px 居中
+        let gap = 1i32;
+        let total_w = 5 * 2 + gap; // 11
+        let start_x = (w - total_w) / 2 + 1; // (16-11)/2 + 1 = 3
+        let start_y = (h - 7) / 2 + 1; // (16-7)/2 + 1 = 5
+
+        for (glyph_idx, glyph) in [GLYPH_I, GLYPH_S].iter().enumerate() {
+            let base_x = start_x + (glyph_idx as i32) * (5 + gap);
+            for row in 0..7i32 {
+                for col in 0..5i32 {
+                    if (glyph[row as usize] >> (4 - col)) & 1 == 1 {
+                        let px = base_x + col;
+                        let py = start_y + row;
+                        pixels[(py * w + px) as usize] = 0xFFFFFFFF; // 白色
+                    }
+                }
             }
         }
     }
