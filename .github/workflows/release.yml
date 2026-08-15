@@ -1,4 +1,4 @@
-name: 构建 MSIX 安装包
+name: 构建 exe 安装包
 
 on:
   push:
@@ -19,28 +19,11 @@ jobs:
       - name: 安装 Rust 工具链
         uses: dtolnay/rust-toolchain@stable
 
-      - name: 安装 Microsoft Store Developer CLI
-        uses: microsoft/setup-WinAppCli@v1
-
       - name: 构建发布版 exe
         run: cargo build --release
 
-      - name: 准备打包目录
-        shell: pwsh
-        run: |
-          $publishDir = Join-Path $env:GITHUB_WORKSPACE "publish\InputSnap"
-          New-Item -ItemType Directory -Path $publishDir -Force | Out-Null
-          Copy-Item "target\release\input_snap.exe" (Join-Path $publishDir "input_snap.exe") -Force
-          Write-Host "exe 已复制到 $publishDir"
-
-      - name: 打包 MSIX（不签名，由商店自动签名）
-        shell: pwsh
-        run: |
-          winapp package "publish\InputSnap" --output "publish\InputSnap.msix"
-          if ($LASTEXITCODE -ne 0) { throw "MSIX 打包失败，退出码: $LASTEXITCODE" }
-
-      - name: 上传 MSIX 构建产物
+      - name: 上传 exe 构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: InputSnap-msix
-          path: publish/InputSnap.msix
+          name: input_snap-exe
+          path: target/release/input_snap.exe
