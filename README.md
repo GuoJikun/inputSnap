@@ -9,11 +9,12 @@ InputSnap 是一款 Windows 输入法自动切换工具：记录每个应用程�
 - **系统托盘**：托盘图标常驻，右键菜单可查看/退出程序
 - **日志记录**：运行日志自动轮转，便于排查问题
 - **低开销**：基于 WinEventHook 监听前台窗口变化，内存占用小
+- **管理员权限**：通过 `app.manifest` 声明 `requireAdministrator`，启动时自动请求提权，无需手动右键以管理员运行
 
 ## 系统要求
 
 - Windows 10 1809（Build 18362）及以上
-- 以**管理员权限**运行（程序内部使用 Win32 API 需要）
+- 需要管理员权限（程序内部使用 Win32 API）
 
 ## 构建
 
@@ -28,39 +29,27 @@ cargo build --release
 cargo test
 ```
 
-发布版 exe 位于 `target/release/input_snap.exe`。
+发布版 exe 位于 `target/release/input_snap.exe`，可直接运行或分发。
 
-## 打包 MSIX 与安装
+### 构建产物说明
 
-使用 `build.ps1` 一键构建并打包：
+- 通过 `build.rs`（winres）嵌入版本信息（1.0.0.0）、图标（`assets/icon.ico`）和 `app.manifest`
+- `app.manifest` 声明管理员权限及 Windows 10/11 兼容性
+- `main.rs` 顶部 `#![windows_subsystem = "windows"]`，发布版不弹出控制台窗口
 
-```powershell
-# 仅编译 exe
-.\build.ps1 -SkipMsix
+## 发布（CI）
 
-# 完整构建并打包 MSIX（使用 devcert.pfx 自签名）
-.\build.ps1
+推送 `v*` 前缀的 git 标签触发 GitHub Actions：
 
-# 打包并以开发模式安装到本机（需开启开发者模式，支持未签名包）
-.\build.ps1 -Install
-```
-
-> 说明：MSIX 格式强制要求签名才能安装。
-> - 本地自测：用 `devcert.pfx` 签名（`build.ps1` 默认路径 `$HOME\devcert.pfx`）
-> - 发布到 Microsoft Store：由微软自动签名，打包时不需签名
-
-### 发布到 Microsoft Store
-
-1. 推送 `v*` 前缀的 git 标签触发 CI，自动构建并打包**未签名** MSIX
-2. 在 GitHub Actions 页面下载 `InputSnap-msix` 构建产物
-3. 登录 [Partner Center](https://partner.microsoft.com/dashboard) 手动上传提交
-
-发布时需保证 MSIX 清单中的 `Publisher` 与 Partner Center 账户一致（`CN=GuoJikun`）。
+1. 在 `windows-latest` 上执行 `cargo build --release`
+2. 将 `target/release/input_snap.exe` 上传为 `input_snap-exe` 构建产物
+3. 到 Actions 页面下载 exe 分发
 
 ## 日志
 
 - 位置：`<安装目录>/logs/InputSnap.log`
 - 单文件最大 1 MB，最多保留 5 个文件
+- 开发构建（debug）同时输出到控制台和文件；发布构建（release）仅写文件日志
 
 ## 配置存储
 
@@ -78,6 +67,12 @@ src/
 ├── config.rs        # 运行时状态
 └── log_writer.rs    # 日志轮转写入器
 ```
+
+其他：
+
+- `build.rs`          # 编译时嵌入版本信息、图标、清单
+- `app.manifest`      # 管理员权限及兼容性声明
+- `assets/icon.ico`   # 程序图标
 
 ## 技术栈
 
