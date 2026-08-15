@@ -29,6 +29,8 @@ chrono = "0.4"
 winres = "0.1"
 
 [profile.release]
-opt-level = "s"
-lto = false
-strip = false
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
