@@ -87,6 +87,9 @@ pub fn get_process_name_by_pid(pid: u32) -> Option<String> {
             return None;
         }
 
+        // 防止 API 返回长度超出缓冲区导致切片越界
+        let len = len.min(buf.len() as u32);
+
         let path = OsString::from_wide(&buf[..len as usize]);
         let path_str = path.to_string_lossy();
         // 取最后的文件名部分

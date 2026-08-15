@@ -107,15 +107,20 @@ unsafe fn create_colored_icon() -> windows::Win32::UI::WindowsAndMessaging::HICO
     };
 
     let mut bits: *mut core::ffi::c_void = std::ptr::null_mut();
-    let hbitmap = CreateDIBSection(
+    let hbitmap = match CreateDIBSection(
         Some(hdc_screen),
         &bmi,
         DIB_RGB_COLORS,
         &mut bits,
         None,
         0,
-    )
-    .unwrap_or_default();
+    ) {
+        Ok(bitmap) => bitmap,
+        Err(_) => {
+            let _ = ReleaseDC(None, hdc_screen);
+            return windows::Win32::UI::WindowsAndMessaging::HICON::default();
+        }
+    };
 
     if !bits.is_null() {
         let pixels = std::slice::from_raw_parts_mut(bits as *mut u8, (w * h * 4) as usize);
@@ -132,14 +137,16 @@ unsafe fn create_colored_icon() -> windows::Win32::UI::WindowsAndMessaging::HICO
 
     let hbm_mask = CreateBitmap(w, h, 1, 1, None);
 
-    let icon = CreateIconIndirect(&ICONINFO {
+    let icon = match CreateIconIndirect(&ICONINFO {
         fIcon: BOOL::from(true),
         xHotspot: 0,
         yHotspot: 0,
         hbmMask: hbm_mask,
         hbmColor: hbitmap,
-    })
-    .unwrap_or_default();
+    }) {
+        Ok(icon) => icon,
+        Err(_) => windows::Win32::UI::WindowsAndMessaging::HICON::default(),
+    };
 
     let _ = DeleteObject(hbitmap.into());
     let _ = DeleteObject(hbm_mask.into());
