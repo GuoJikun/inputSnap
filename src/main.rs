@@ -2,6 +2,7 @@
 #![windows_subsystem = "windows"]
 
 mod config;
+mod crash;
 mod ime;
 mod log_writer;
 mod registry;
@@ -102,6 +103,9 @@ fn run_message_loop() {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     setup_log()?;
+
+    // 日志初始化完成后立即安装崩溃捕获，确保 panic/原生异常能写入日志
+    crash::install();
 
     log::info!("========================================");
     log::info!("InputSnap 已启动");
