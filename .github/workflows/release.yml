@@ -19,6 +19,11 @@ jobs:
       - name: 安装 Rust 工具链
         uses: dtolnay/rust-toolchain@stable
 
+      - name: 缓存 cargo 依赖
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: .
+
       - name: 构建发布版 exe
         run: cargo build --release
 
