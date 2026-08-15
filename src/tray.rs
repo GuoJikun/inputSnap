@@ -63,7 +63,7 @@ fn create_hidden_window() -> Result<HWND, String> {
         let wnd_class = WNDCLASSW {
             style: CS_HREDRAW | CS_VREDRAW,
             lpfnWndProc: Some(window_proc),
-            hInstance: GetModuleHandleW(None).unwrap().into(),
+            hInstance: GetModuleHandleW(None).unwrap_or_default().into(),
             lpszClassName: PCWSTR(class_name.as_ptr()),
             ..std::mem::zeroed()
         };

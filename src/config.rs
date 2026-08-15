@@ -28,10 +28,10 @@ impl AppState {
     }
 
     pub fn get_last_process(&self) -> Option<String> {
-        self.last_process.lock().unwrap().clone()
+        self.last_process.lock().unwrap_or_else(|e| e.into_inner()).clone()
     }
 
     pub fn set_last_process(&self, name: Option<String>) {
-        *self.last_process.lock().unwrap() = name;
+        *self.last_process.lock().unwrap_or_else(|e| e.into_inner()) = name;
     }
 }
