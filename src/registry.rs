@@ -1,5 +1,5 @@
 use windows::Win32::System::Registry::{
-    RegCloseKey, RegOpenKeyExW, RegQueryValueExW, RegSetValueExW,
+    RegCloseKey, RegCreateKeyExW, RegOpenKeyExW, RegQueryValueExW, RegSetValueExW,
     HKEY_CURRENT_USER, KEY_READ, KEY_WRITE, REG_SZ, REG_VALUE_TYPE,
 };
 use windows::Win32::Foundation::ERROR_SUCCESS;
@@ -13,6 +13,8 @@ fn open_key(desired_access: u32) -> Result<windows::Win32::System::Registry::HKE
     unsafe {
         let mut hkey = windows::Win32::System::Registry::HKEY(std::ptr::null_mut());
         let wide: Vec<u16> = SUB_KEY.encode_utf16().chain(std::iter::once(0)).collect();
+
+        // 先尝试打开
         let result = RegOpenKeyExW(
             HKEY_CURRENT_USER,
             windows::core::PCWSTR(wide.as_ptr()),
@@ -21,10 +23,33 @@ fn open_key(desired_access: u32) -> Result<windows::Win32::System::Registry::HKE
             &mut hkey,
         );
         if result == ERROR_SUCCESS {
-            Ok(hkey)
-        } else {
-            Err(format!("RegOpenKeyExW failed: {:?}", result))
+            return Ok(hkey);
         }
+
+        // 打开失败（如键不存在）时创建，KEY_WRITE 下创建成功即可返回
+        if desired_access == KEY_WRITE.0 {
+            let mut disposition = windows::Win32::System::Registry::REG_CREATE_KEY_DISPOSITION(0);
+            let create_result = RegCreateKeyExW(
+                HKEY_CURRENT_USER,
+                windows::core::PCWSTR(wide.as_ptr()),
+                None,
+                windows::core::PCWSTR(std::ptr::null()),
+                windows::Win32::System::Registry::REG_OPTION_NON_VOLATILE,
+                windows::Win32::System::Registry::REG_SAM_FLAGS(KEY_WRITE.0),
+                None,
+                &mut hkey,
+                Some(&mut disposition),
+            );
+            if create_result == ERROR_SUCCESS {
+                return Ok(hkey);
+            }
+            return Err(format!(
+                "RegCreateKeyExW failed: {:?}, open: {:?}",
+                create_result, result
+            ));
+        }
+
+        Err(format!("RegOpenKeyExW failed: {:?}", result))
     }
 }
 

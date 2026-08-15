@@ -43,17 +43,21 @@ impl Drop for SafeHook {
 
 static GLOBAL_STATE: AtomicPtr<()> = AtomicPtr::new(std::ptr::null_mut());
 
+/// 保存全局状态指针。`Arc::into_raw` 返回指向 `AppState` 本身的 data 指针，
+/// 同时泄漏该 Arc（引用计数不减），保证回调中可安全使用 `&'static AppState`。
 pub fn set_state_ptr(state: Arc<AppState>) {
     let raw = Arc::into_raw(state) as *mut ();
     GLOBAL_STATE.store(raw, Ordering::Release);
 }
 
-fn get_global_state() -> Option<&'static Arc<AppState>> {
+fn get_global_state() -> Option<&'static AppState> {
     let ptr = GLOBAL_STATE.load(Ordering::Acquire);
     if ptr.is_null() {
         None
     } else {
-        Some(unsafe { &*(ptr as *const Arc<AppState>) })
+        // 注意：GLOBAL_STATE 存的是 Arc 的 data 指针（指向 AppState），
+        // 不能转成 &Arc<AppState>，否则回调中解引用会读到垃圾指针导致访问冲突
+        Some(unsafe { &*(ptr as *const AppState) })
     }
 }
 
