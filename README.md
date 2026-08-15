@@ -6,7 +6,7 @@ InputSnap 是一款 Windows 输入法自动切换工具：记录每个应用程�
 
 - **窗口级记忆**：按进程记录每个应用窗口的键盘布局（输入法）状态
 - **自动恢复**：切换窗口时自动激活该窗口上次使用的输入法
-- **系统托盘**：托盘图标常驻，右键菜单可查看/退出程序
+- **系统托盘**：托盘图标常驻（基于 Win32 `Shell_NotifyIconW` 原生实现），左键单击切换启用/暂停，右键弹出菜单
 - **日志记录**：运行日志自动轮转，便于排查问题
 - **低开销**：基于 WinEventHook 监听前台窗口变化，内存占用小
 - **管理员权限**：通过 `app.manifest` 声明 `requireAdministrator`，启动时自动请求提权，无需手动右键以管理员运行
@@ -78,5 +78,4 @@ src/
 
 - Rust（edition 2021）
 - [windows crate](https://crates.io/crates/windows) 0.62（Windows API）
-- [tray-icon](https://crates.io/crates/tray-icon) + [muda](https://crates.io/crates/muda)（系统托盘）
 - [log](https://crates.io/crates/log) + [fern](https://crates.io/crates/fern) + [chrono](https://crates.io/crates/chrono)（日志）
