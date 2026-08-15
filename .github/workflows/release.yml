@@ -1,4 +1,4 @@
-name: 构建 exe 安装包
+name: 构建并发布 exe
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -41,8 +41,30 @@ jobs:
       - name: 构建发布版 exe
         run: cargo build --release --target ${{ matrix.target }}
 
+      - name: 按架构重命名并上传 exe
+        shell: powershell
+        run: |
+          $arch = if ('${{ matrix.target }}' -eq 'aarch64-pc-windows-msvc') { 'arm64' } else { 'x64' }
+          Copy-Item "target/${{ matrix.target }}/release/input_snap.exe" "input_snap-$arch.exe"
+
       - name: 上传 exe 构建产物
         uses: actions/upload-artifact@v4
         with:
           name: input_snap-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/input_snap.exe
+          path: input_snap-*.exe
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 下载所有构建产物
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: 创建 GitHub Release 并上传 exe
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*.exe
+          generate_release_notes: true
