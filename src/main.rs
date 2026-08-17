@@ -117,6 +117,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         log::info!("已获得管理员权限");
     }
 
+    // 首次运行时默认启用开机自启（仅在用户从未手动配置过时生效）
+    if !registry::is_auto_start_configured() {
+        match registry::enable_auto_start() {
+            Ok(()) => {
+                registry::mark_auto_start_configured();
+                log::info!("首次运行，已默认启用开机自启");
+            }
+            Err(e) => log::warn!("默认启用开机自启失败: {}", e),
+        }
+    }
+
     let state = Arc::new(AppState::new());
     log::info!("状态对象创建完成");
 

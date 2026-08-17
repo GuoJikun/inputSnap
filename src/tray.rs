@@ -15,8 +15,8 @@ use windows::Win32::UI::WindowsAndMessaging::{
     PostQuitMessage, RegisterClassW, SetForegroundWindow,
     TrackPopupMenu, TRACK_POPUP_MENU_FLAGS, WINDOW_EX_STYLE, WINDOW_STYLE, WNDCLASSW,
     WM_DESTROY, WM_LBUTTONUP, WM_RBUTTONUP, WM_USER,
-    CW_USEDEFAULT, CS_HREDRAW, CS_VREDRAW, MF_GRAYED, MF_SEPARATOR, MF_STRING,
-    TPM_LEFTALIGN, TPM_LEFTBUTTON,
+    CW_USEDEFAULT, CS_HREDRAW, CS_VREDRAW, MF_CHECKED, MF_GRAYED, MF_SEPARATOR, MF_STRING,
+    MF_UNCHECKED, TPM_LEFTALIGN, TPM_LEFTBUTTON,
 };
 
 use crate::config::AppState;
@@ -247,6 +247,15 @@ unsafe fn show_tray_menu(hwnd: HWND) {
 
     let _ = AppendMenuW(hmenu, MF_SEPARATOR, 0, PCWSTR(std::ptr::null()));
 
+    // 开机自启选项（根据注册表状态显示勾选标记）
+    let auto_start_on = crate::registry::is_auto_start_enabled();
+    let auto_start_text = "开机自启\0";
+    let auto_start_flags = MF_STRING | if auto_start_on { MF_CHECKED } else { MF_UNCHECKED };
+    let auto_start_w: Vec<u16> = auto_start_text.encode_utf16().collect();
+    let _ = AppendMenuW(hmenu, auto_start_flags, 4, PCWSTR(auto_start_w.as_ptr()));
+
+    let _ = AppendMenuW(hmenu, MF_SEPARATOR, 0, PCWSTR(std::ptr::null()));
+
     let quit_w: Vec<u16> = "退出\0".encode_utf16().collect();
     let _ = AppendMenuW(hmenu, MF_STRING, 3, PCWSTR(quit_w.as_ptr()));
 
@@ -275,6 +284,21 @@ unsafe fn show_tray_menu(hwnd: HWND) {
             log::info!("用户请求退出");
             remove_tray_icon(hwnd);
             PostQuitMessage(0);
+        }
+        4 => {
+            // 用户手动切换开机自启，标记为已配置
+            crate::registry::mark_auto_start_configured();
+            if crate::registry::is_auto_start_enabled() {
+                match crate::registry::disable_auto_start() {
+                    Ok(()) => log::info!("已禁用开机自启"),
+                    Err(e) => log::error!("禁用开机自启失败: {}", e),
+                }
+            } else {
+                match crate::registry::enable_auto_start() {
+                    Ok(()) => log::info!("已启用开机自启"),
+                    Err(e) => log::error!("启用开机自启失败: {}", e),
+                }
+            }
         }
         _ => {}
     }
