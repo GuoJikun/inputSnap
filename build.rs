@@ -26,8 +26,8 @@ fn main() {
     res.set("FileDescription", "InputSnap - 输入法自动切换");
     res.set("CompanyName", "InputSnap");
     res.set("OriginalFilename", "input_snap.exe");
-    // 版本号统一从这里维护，如 "1.0.0"
-    let version = parse_version("1.0.0");
+    // 版本号统一从这里维护，如 "1.1.0"
+    let version = parse_version("1.1.0");
     res.set_version_info(winres::VersionInfo::PRODUCTVERSION, version);
     res.set_version_info(winres::VersionInfo::FILEVERSION, version);
     res.compile().expect("Failed to compile Windows resource");
