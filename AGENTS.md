@@ -27,7 +27,9 @@ src/
 ├── watcher.rs       # WinEventHook 监听前台窗口
 ├── registry.rs      # 注册表读写
 ├── tray.rs          # 系统托盘 + 菜单
+├── about.rs         # 关于窗口：版本号 + 升级地址链接
 ├── config.rs        # 运行时状态
+├── crash.rs         # 崩溃捕获与日志记录
 └── log_writer.rs    # 日志轮转写入器
 ```
 

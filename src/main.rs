@@ -1,6 +1,7 @@
 // 声明为 Windows 窗口子系统，避免启动时弹出控制台窗口
 #![windows_subsystem = "windows"]
 
+mod about;
 mod config;
 mod crash;
 mod ime;

@@ -256,6 +256,11 @@ unsafe fn show_tray_menu(hwnd: HWND) {
 
     let _ = AppendMenuW(hmenu, MF_SEPARATOR, 0, PCWSTR(std::ptr::null()));
 
+    let about_w: Vec<u16> = "关于\0".encode_utf16().collect();
+    let _ = AppendMenuW(hmenu, MF_STRING, 6, PCWSTR(about_w.as_ptr()));
+
+    let _ = AppendMenuW(hmenu, MF_SEPARATOR, 0, PCWSTR(std::ptr::null()));
+
     let quit_w: Vec<u16> = "退出\0".encode_utf16().collect();
     let _ = AppendMenuW(hmenu, MF_STRING, 3, PCWSTR(quit_w.as_ptr()));
 
@@ -299,6 +304,10 @@ unsafe fn show_tray_menu(hwnd: HWND) {
                     Err(e) => log::error!("启用开机自启失败: {}", e),
                 }
             }
+        }
+        6 => {
+            log::info!("用户打开关于窗口");
+            crate::about::show_about(hwnd);
         }
         _ => {}
     }
