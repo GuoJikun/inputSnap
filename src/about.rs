@@ -106,7 +106,7 @@ pub fn show_about(owner: HWND) {
 }
 
 /// 创建窗口内的静态文本和可点击链接控件
-unsafe fn create_controls(parent: HWND) {
+unsafe fn create_controls(parent: HWND) { unsafe {
     let static_class = wide("STATIC");
     let link_class = wide("SysLink");
     // 创建微软雅黑字体（-14 约 10.5pt@96DPI）
@@ -180,7 +180,7 @@ unsafe fn create_controls(parent: HWND) {
             Some(LPARAM(1)),
         );
     }
-}
+}}
 
 /// 创建子控件的通用封装
 unsafe fn create_child(
@@ -192,7 +192,7 @@ unsafe fn create_child(
     y: i32,
     w: i32,
     h: i32,
-) -> HWND {
+) -> HWND { unsafe {
     let text_w = wide(text);
     match CreateWindowExW(
         WINDOW_EX_STYLE(0),
@@ -214,14 +214,14 @@ unsafe fn create_child(
             HWND(std::ptr::null_mut())
         }
     }
-}
+}}
 
 unsafe extern "system" fn about_proc(
     hwnd: HWND,
     msg: u32,
     wparam: WPARAM,
     lparam: LPARAM,
-) -> LRESULT {
+) -> LRESULT { unsafe {
     match msg {
         WM_CTLCOLORSTATIC => {
             // 文本背景模式设为透明，并返回与窗口底色一致的画刷。
@@ -257,10 +257,10 @@ unsafe extern "system" fn about_proc(
         }
         _ => DefWindowProcW(hwnd, msg, wparam, lparam),
     }
-}
+}}
 
 /// 调用系统默认浏览器打开链接
-unsafe fn open_url(url: &str) {
+unsafe fn open_url(url: &str) { unsafe {
     if url.is_empty() {
         return;
     }
@@ -280,7 +280,7 @@ unsafe fn open_url(url: &str) {
     } else {
         log::info!("已打开链接: {}", url);
     }
-}
+}}
 
 /// 字符串转以 NUL 结尾的 UTF-16 序列
 fn wide(s: &str) -> Vec<u16> {

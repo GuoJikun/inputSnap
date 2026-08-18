@@ -10,7 +10,7 @@ use crate::registry::{load_ime_for_process, save_ime_for_process};
 
 type HHook = *mut core::ffi::c_void;
 
-extern "system" {
+unsafe extern "system" {
     fn SetWinEventHook(
         eventmin: u32,
         eventmax: u32,
@@ -61,7 +61,7 @@ fn get_global_state() -> Option<&'static AppState> {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "system" fn event_callback(
     _hook: HHook,
     event: u32,

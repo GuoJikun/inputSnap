@@ -92,7 +92,7 @@ fn create_hidden_window() -> Result<HWND, String> {
 const GLYPH_I: [u8; 7] = [0b11111, 0b00100, 0b00100, 0b00100, 0b00100, 0b00100, 0b11111];
 const GLYPH_S: [u8; 7] = [0b01110, 0b10001, 0b10000, 0b01110, 0b00001, 0b10001, 0b01110];
 
-unsafe fn create_colored_icon() -> windows::Win32::UI::WindowsAndMessaging::HICON {
+unsafe fn create_colored_icon() -> windows::Win32::UI::WindowsAndMessaging::HICON { unsafe {
     // 原生 16x16 绘制，与托盘显示尺寸 1:1 对应，避免系统缩放导致模糊
     let (w, h) = (16i32, 16i32);
 
@@ -188,14 +188,14 @@ unsafe fn create_colored_icon() -> windows::Win32::UI::WindowsAndMessaging::HICO
     let _ = ReleaseDC(None, hdc_screen);
 
     icon
-}
+}}
 
 unsafe extern "system" fn window_proc(
     hwnd: HWND,
     msg: u32,
     wparam: WPARAM,
     lparam: LPARAM,
-) -> windows::Win32::Foundation::LRESULT {
+) -> windows::Win32::Foundation::LRESULT { unsafe {
     match msg {
         WM_TRAYICON => {
             let mouse_msg = (lparam.0 & 0xFFFF) as u32;
@@ -222,9 +222,9 @@ unsafe extern "system" fn window_proc(
         }
         _ => DefWindowProcW(hwnd, msg, wparam, lparam),
     }
-}
+}}
 
-unsafe fn show_tray_menu(hwnd: HWND) {
+unsafe fn show_tray_menu(hwnd: HWND) { unsafe {
     let hmenu = CreatePopupMenu().unwrap_or_default();
 
     let status = if let Some(ref state) = APP_STATE {
@@ -311,7 +311,7 @@ unsafe fn show_tray_menu(hwnd: HWND) {
         }
         _ => {}
     }
-}
+}}
 
 fn remove_tray_icon(hwnd: HWND) {
     unsafe {

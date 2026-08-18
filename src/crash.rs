@@ -50,7 +50,7 @@ fn install_unhandled_exception_filter() {
 /// 让系统继续默认处理（弹出错误对话框或终止进程）。
 unsafe extern "system" fn exception_filter(
     exception_info: *const EXCEPTION_POINTERS,
-) -> i32 {
+) -> i32 { unsafe {
     if !exception_info.is_null() {
         let record = (*exception_info).ExceptionRecord;
         if !record.is_null() {
@@ -65,4 +65,4 @@ unsafe extern "system" fn exception_filter(
 
     // EXCEPTION_CONTINUE_SEARCH = 0，交由系统默认处理
     0
-}
+}}
