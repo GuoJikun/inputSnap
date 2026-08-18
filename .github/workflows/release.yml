@@ -45,7 +45,9 @@ jobs:
         shell: powershell
         run: |
           $arch = if ('${{ matrix.target }}' -eq 'aarch64-pc-windows-msvc') { 'arm64' } else { 'x64' }
-          Copy-Item "target/${{ matrix.target }}/release/input_snap.exe" "input_snap-$arch.exe"
+          # 使用触发的 tag 名作为版本号（保留 v 前缀，如 v1.1.0）
+          $version = '${{ github.ref_name }}'
+          Copy-Item "target/${{ matrix.target }}/release/input_snap.exe" "input_snap-$version-$arch.exe"
 
       - name: 上传 exe 构建产物
         uses: actions/upload-artifact@v4
