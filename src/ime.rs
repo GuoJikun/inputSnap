@@ -1,31 +1,21 @@
 use std::ffi::OsString;
 use std::os::windows::ffi::OsStringExt;
 use windows::Win32::Foundation::CloseHandle;
-use windows::Win32::UI::Input::KeyboardAndMouse::{
-    ActivateKeyboardLayout, GetKeyboardLayout, KLF_SETFORPROCESS,
-};
 use windows::Win32::UI::WindowsAndMessaging::{
     GetForegroundWindow, GetWindowThreadProcessId,
 };
 
-// Re-export HKL for use by other modules
-pub use windows::Win32::UI::Input::KeyboardAndMouse::HKL;
+// Re-export TSF 类型供其他模块使用
+pub use crate::tsf::InputMethod;
 
-/// 获取前台窗口的 HKL（键盘布局句柄）
-pub fn get_foreground_hkl() -> Option<HKL> {
-    unsafe {
-        let hwnd = GetForegroundWindow();
-        if hwnd.0.is_null() {
-            return None;
-        }
-        let mut process_id = 0u32;
-        let thread_id = GetWindowThreadProcessId(hwnd, Some(&mut process_id));
-        if thread_id == 0 {
-            return None;
-        }
-        let hkl = GetKeyboardLayout(thread_id);
-        Some(hkl)
-    }
+/// 获取前台窗口的输入法状态（通过 TSF Profile，兜底 GetKeyboardLayout）
+pub fn get_foreground_input_method() -> Option<InputMethod> {
+    crate::tsf::get_foreground_input_method()
+}
+
+/// 激活指定的输入法（通过 TSF，兜底 ActivateKeyboardLayout）
+pub fn activate_input_method(im: &InputMethod) -> bool {
+    crate::tsf::activate_input_method(im)
 }
 
 /// 获取前台窗口的进程 ID
@@ -43,27 +33,6 @@ pub fn get_foreground_process_id() -> Option<u32> {
             Some(process_id)
         }
     }
-}
-
-/// 激活指定的键盘布局
-pub fn activate_keyboard_layout(hkl: HKL) -> bool {
-    unsafe { ActivateKeyboardLayout(hkl, KLF_SETFORPROCESS).is_ok() }
-}
-
-/// 将 HKL 值转换为可读的字符串（例如 "0x08040804"）
-pub fn hkl_to_string(hkl: HKL) -> String {
-    format!("0x{:08X}", hkl.0 as usize)
-}
-
-/// 从字符串解析 HKL 值
-pub fn string_to_hkl(s: &str) -> Option<HKL> {
-    let s = s.trim();
-    let val = if let Some(hex) = s.strip_prefix("0x").or_else(|| s.strip_prefix("0X")) {
-        usize::from_str_radix(hex, 16).ok()?
-    } else {
-        s.parse::<usize>().ok()?
-    };
-    Some(HKL(val as *mut core::ffi::c_void))
 }
 
 /// 获取前台窗口进程名

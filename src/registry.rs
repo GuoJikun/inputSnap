@@ -4,7 +4,7 @@ use windows::Win32::System::Registry::{
 };
 use windows::Win32::Foundation::ERROR_SUCCESS;
 
-use crate::ime::{hkl_to_string, string_to_hkl, HKL};
+use crate::tsf::InputMethod;
 
 const SUB_KEY: &str = "Software\\KeepAppInputStatus";
 
@@ -108,10 +108,10 @@ fn write_string_value(
     }
 }
 
-/// 保存进程的输入法 HKL 值
-pub fn save_ime_for_process(process_name: &str, hkl: HKL) -> Result<(), String> {
+/// 保存进程的输入法配置（TSF Profile + HKL 兜底）
+pub fn save_ime_for_process(process_name: &str, im: &InputMethod) -> Result<(), String> {
     let hkey = open_key(KEY_WRITE.0)?;
-    let value = hkl_to_string(hkl);
+    let value = im.to_registry_string();
     let result = write_string_value(hkey, process_name, &value);
     unsafe {
         let _ = RegCloseKey(hkey);
@@ -119,14 +119,14 @@ pub fn save_ime_for_process(process_name: &str, hkl: HKL) -> Result<(), String> 
     result
 }
 
-/// 读取进程保存的输入法 HKL 值
-pub fn load_ime_for_process(process_name: &str) -> Option<HKL> {
+/// 读取进程保存的输入法配置
+pub fn load_ime_for_process(process_name: &str) -> Option<InputMethod> {
     let hkey = open_key(KEY_READ.0).ok()?;
     let value = read_string_value(hkey, process_name);
     unsafe {
         let _ = RegCloseKey(hkey);
     }
-    value.and_then(|s| string_to_hkl(&s))
+    value.and_then(|s| InputMethod::from_registry_string(&s))
 }
 
 // ─── 开机自启 ────────────────────────────────────────────────────────

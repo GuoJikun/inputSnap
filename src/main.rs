@@ -8,6 +8,7 @@ mod ime;
 mod log_writer;
 mod registry;
 mod tray;
+mod tsf;
 mod watcher;
 
 use std::sync::Arc;
